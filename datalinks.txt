@@ -1,0 +1,9 @@
+CHECKIN TIMES
+
+TSA SECURITY
+http://www.whatsbusy.com/airport #airport wait times for security realtime,  can request i assume this data assumes from entering the security until exit
+http://www.ifly.com/hartsfield-jackson-atlanta-international/wait-times
+
+DEPLANING (FROM TOUCHDOWN TO EXIT TO TERMINAL BUILDING)
+    INTERNATIONAL TRAVEL
+    https://awt.cbp.gov/ (HISTORICAL PASSPORT CLEARANCE DATA CBP) LEGEND: https://awt.cbp.gov/Specs.html
