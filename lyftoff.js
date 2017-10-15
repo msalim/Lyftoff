@@ -56,13 +56,18 @@
 // organized by flight since flight time may change. use
 // a heap to pop off flights as they land. 
 
-var Minheap = require("minheap");
+const Lyft = require("node-lyft");
+const Minheap = require("minheap");
+const request = require("request");
+
+const pollFrequency = 10; // seconds per poll
+const lyftAPIToken = "mD6RQO8YOCVEtO3yt8L6PJsO0o9u2WWHNEoAotlvoNlt9OBJyY/jn/o25etTq/SXw0hwcdAYLB0eLlTOKYVfjDNiQ6IpSenMsU7LdOtiC5y9UUyNvUKoqUM=";
 
 const compareFn = (flyer1, flyer2) => {
-    return y-x;
+    return flyer1.pickupTime-flyer2.pickupTime;
 }
 
-const _flyerHeap = new(Minheap);
+const _flyerHeap = new Minheap(compareFn);
 
 /* flight contains:
  * - flight number
@@ -85,13 +90,36 @@ const _flyerHeap = new(Minheap);
  *   hasBaggage : boolean,
  *   needAssistance : boolean,
  *   extraTime : number,
+ *   lyftPreference: number, // 0 = line, 1 = lyft, 2 = plus, 3 = premier, 4 = lux, 5 = luxsuv
  *   pickupTime : number
  *   }
  */
 
 // returns a number that calculates gate to terminal
 const calculateTime = (source, destination) => {
-    return 10;
+    if (source == "D31") {
+        if (destination == "lyft") {
+            return 24 * 60;
+        }
+        else if (destination == "baggage") {
+            return 13 * 60;
+        }
+    }
+    else if (source == "D16") {
+        if (destination == "lyft") {
+            return 19 * 60;
+        }
+        else if (destination == "baggage") {
+            return 8 * 60;
+        }
+    }
+    else if (source == "baggage") {
+        if (destination == "lyft") {
+            return 11 * 60;
+        }
+    }
+    // catch-all, for now
+    return 30 * 60;
 };
 
 const calculateBaggageTime = (flightNumber, flyersWithBaggage) => {
@@ -122,41 +150,72 @@ const add_customers_for_lyftoff = (flight) => {
 };
 
 // this function gets called every 10 seconds or so
-const popAndDispatchLyft = (lyftModule) => {
-    const date = new Date();
-    const time = date.getTime()/1000; // in seconds
-    const lyftTimeRequired = lyftModule.getEstimateWaitTime("ATL-SOUTH");
-    let topFlyer = _flyerHeap.top();
-    while(topFlyer != null && topFlyer < time)
-    {
-        lyftModule.dispatch(_flyerHeap.pop());
-        topFlyer = _flyerHeap.top();
-    };
-    return;
+const popAndDispatchLyft = () => {
+    new LyftModuleAtlSouth();
+    setTimeout(() => {popAndDispatchLyft();}, 5000);
 }
 
-import lyft from 'node-lyft';
-const LyftModuleAtlSouth = (accessToken) => {
-    let defaultClient = lyft.ApiClient.instance;
-    
-    // Configure OAuth2 access token for authorization: Client Authentication
-    let clientAuth = defaultClient.authentications['Client Authentication'];
-    clientAuth.accessToken = accessToken;
-    
-    let apiInstance = new lyft.PublicApi();
-    
-    apiInstance.getETA(33.6384945, -84.4471744).then((data) => {
-      console.log('API called successfully. Returned data: ' + data);
-    }, (error) => {
-      console.error(error);
-    });    
+const tryLoopAndPop = (lyftModule) => {
+    const date = new Date();
+    const time = date.getTime()/1000; // in seconds
+    lyftModule.getETA(33.6384945, -84.4471744).then((timeData) => {
+        let topFlyer = _flyerHeap.top();
+        while(topFlyer != null && topFlyer.pickupTime < time + timeData["eta_estimates"][topFlyer["lyftPreference"]]["eta_seconds"])
+        {
+            // call Lyft here, but don't do it actually
+            _flyerHeap.pop();
+            console.log("Popped a flyer to be picked up...");
+            topFlyer = _flyerHeap.top();
+        };
+      }, (error) => {
+        console.error(error);
+        return null;
+      });  
+}
+
+function LyftModuleAtlSouth () {
+    const authUrl = "https://PTrHcv-XC2ig:6XoNimObmCUP2PYdH9kA6cF_0uBU0znV@api.lyft.com/oauth/token";    
+    const authData = {
+        "grant_type": "client_credentials",
+        "scope": "public"
+    };
+    var accessToken;
+    request.post({url:authUrl, formData:authData}, function(err, response, body) {
+        if (err) {
+            return console.error("Fail:", err);
+        }
+        var response = JSON.parse(body);
+        accessToken = response["access_token"];
+        let defaultClient = Lyft.ApiClient.instance;
+        
+        // Configure OAuth2 access token for authorization: Client Authentication
+        let clientAuth = defaultClient.authentications['Client Authentication'];
+        clientAuth.accessToken = accessToken;
+        console.log(accessToken);
+        
+        let apiInstance = new Lyft.PublicApi();
+        tryLoopAndPop(apiInstance);
+    });
 };
 
 
 const poller = () => {
-    const lyftModuleAtlSouth = new LyftModule("PTrHcv-XC2ig");
-    while(true) {
-        popAndDispatchLyft(lyftModule);
-        sl
-    }
+    const date = new Date();
+    const time = date.getTime()/1000; // in seconds
+
+    _flyerHeap.push({"pickupTime": time, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+70, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+130, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+190, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+250, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+310, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+370, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+430, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+490, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+550, "lyftPreference": 1});
+    _flyerHeap.push({"pickupTime": time+610, "lyftPreference": 1});
+
+    popAndDispatchLyft();
 }
+
+poller();

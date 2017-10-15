@@ -1,0 +1,32 @@
+{
+  "name": "lyftoff",
+  "version": "1.0.0",
+  "description": "Readme goes here",
+  "main": "delta_lyftoff.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msalim/deltaT.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/msalim/deltaT/issues"
+  },
+  "homepage": "https://github.com/msalim/deltaT#readme",
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "dependencies": {
+    "babel-core": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
+    "minheap": "^1.0.2",
+    "sync-request": "^4.1.0",
+    "xhr2": "^0.1.4"
+  },
+  "devDependencies": {}
+}
