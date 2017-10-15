@@ -16,6 +16,7 @@ def main():
             lyft_data_json = json.loads(lyft_file.read())
             
     root = Tk()
+    root.title("Lyftoff (Visualization)")
     canvas = Canvas(root, width=1000, height=550)
     canvas.pack()
     button = Button(root, text="Click to start simulation", 
@@ -97,7 +98,8 @@ def draw_stuff(root, canvas, index, flyer_data_json, lyft_data_json):
     time = 1110
     canvas.delete(ALL)
     canvas.create_text(925, 530, text="%d:%.2d" % ((time+(index))//60, (time+(index))%60), font="Roboto 24")
-    canvas.create_text(100, 70, text="")
+    canvas.create_text(100, 70, text="Terminal", font="Roboto 18")
+    canvas.create_text(900, 70, text="Lyft Pool", font="Roboto 18")
     canvas.create_oval(85, 85, 115, 115, fill="yellow")
     canvas.create_oval(885, 85, 915, 115, fill="magenta")
     root.after(500, draw_stuff, root, canvas, index+1, flyer_data_json, lyft_data_json)
