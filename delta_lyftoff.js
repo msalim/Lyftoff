@@ -15,9 +15,10 @@
  * Our algorithm proceeds as follows.
  * Prereqs: - Add a "Delta+Lyft" line at airport
  *          - Acquire data for baggage claim times
- *          
- * Passenger is offered a "book a Lyft automatically as I land" button.
- * If they request one, give them a QR code to show to the driver later on.
+ *
+ * Passenger is offered a "book a Lyft for after I land" button.
+ * If they request one, give them a QR code to show to the driver later on,
+ * and tell them that everything has been taken care for.
  * On Delta's side, we dispatch a Lyft for the customer at this time:
  * - When the plane lands
  * - If customer has baggage checked in: the time the baggage will go out
@@ -43,3 +44,119 @@
  */
 
 // lyftoff.js
+
+// the customer object contains
+// - the flight the customer is taking customer["flight"]
+// - whether the customer has baggage customer["hasBaggage"]
+// - whether the customer needs additional assistance customer["needAssistance"]
+// - if the customer requests extra time customer["extraTime"]
+
+// the flight object contains flight details, including when it landed
+// and customers in the flight queue
+// organized by flight since flight time may change. use
+// a heap to pop off flights as they land. 
+
+var Minheap = require("minheap");
+
+const compareFn = (flyer1, flyer2) => {
+    return y-x;
+}
+
+const _flyerHeap = new(Minheap);
+
+/* flight contains:
+ * - flight number
+ * - departure gate, updated real-time
+ * - estimated departure time, updated real-time
+ * - arrival gate, updated real-time
+ * - estimated arrival time, updated real-time
+ * - list of customers boarded
+ * flight : objectOf {
+ *   flightNumber : number,
+ *   departureGate : string,
+ *   departureTime : number,
+ *   arrivalGate: string,
+ *   arrivalTime : number,
+ *   flyerList : array of flyers
+ *   },
+ * flyer : objectOf {
+ *   id : number,
+ *   flightNumber : number,
+ *   hasBaggage : boolean,
+ *   needAssistance : boolean,
+ *   extraTime : number,
+ *   pickupTime : number
+ *   }
+ */
+
+// returns a number that calculates gate to terminal
+const calculateTime = (source, destination) => {
+    return 10;
+};
+
+const calculateBaggageTime = (flightNumber, flyersWithBaggage) => {
+    // if data exists, get expected time for first baggage to come out
+    // based on flightNumber. But since it doesn't exist, we hand-wave
+    return 10 + 0.1 * flyersWithBaggage;
+}
+
+const add_customers_for_lyftoff = (flight) => {
+    flyersWithBaggage = 0;
+    flight.flyerList.forEach((flyer) => {
+        let timeToLyftPickup;
+        if (flyer.hasBaggage) {
+            timeToLyftPickup = max([calculateTime(flight.arrivalGate, "baggage"),
+                            calculateBaggageTime(flightNumber, flyersWithBaggage)]) +
+                            calculateTime("baggage", "lyft");
+            flyersWithBaggage += 1;
+        }
+        else {
+            timeToLyftPickup = calculateTime(flight.arrivalGate, "lyft");    
+        }
+        // adjust if flyer needs assistance
+        timeToLyftPickup = flyer.needAssistance ? 1.5 * timeToLyftPickup : timeToLyftPickup;
+        flyer.pickupTime = timeToLyftPickup;
+        _flyerHeap.push(flyer);
+        return;
+    });
+};
+
+// this function gets called every 10 seconds or so
+const popAndDispatchLyft = (lyftModule) => {
+    const date = new Date();
+    const time = date.getTime()/1000; // in seconds
+    const lyftTimeRequired = lyftModule.getEstimateWaitTime("ATL-SOUTH");
+    let topFlyer = _flyerHeap.top();
+    while(topFlyer != null && topFlyer < time)
+    {
+        lyftModule.dispatch(_flyerHeap.pop());
+        topFlyer = _flyerHeap.top();
+    };
+    return;
+}
+
+import lyft from 'node-lyft';
+const LyftModuleAtlSouth = (accessToken) => {
+    let defaultClient = lyft.ApiClient.instance;
+    
+    // Configure OAuth2 access token for authorization: Client Authentication
+    let clientAuth = defaultClient.authentications['Client Authentication'];
+    clientAuth.accessToken = accessToken;
+    
+    let apiInstance = new lyft.PublicApi();
+    
+    apiInstance.getETA(33.6384945, -84.4471744).then((data) => {
+      console.log('API called successfully. Returned data: ' + data);
+    }, (error) => {
+      console.error(error);
+    });    
+};
+
+
+const poller = () => {
+    const lyftModuleAtlSouth = new LyftModule("PTrHcv-XC2ig");
+    while(true) {
+        popAndDispatchLyft(lyftModule);
+        sl
+    }
+}
